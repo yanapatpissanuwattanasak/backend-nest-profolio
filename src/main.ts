@@ -10,6 +10,10 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
+  app.setGlobalPrefix('/api');
+  app.enableCors({
+    origin: '*',
+  });
   await app.listen(4000);
 }
 bootstrap();

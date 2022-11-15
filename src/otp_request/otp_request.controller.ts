@@ -35,13 +35,21 @@ export class OtpRequestController {
     const { phoneNo, otpCode } = createOtpRequestDto;
     const salt = bcrypt.genSaltSync(saltRounds);
     const hash = bcrypt.hashSync(otpCode, salt);
+    const user = await this.otpRequestService.findOneByPhoneNo(phoneNo);
+    const dateNow = new Date(new Date().toUTCString()).toISOString();
+    if (user) {
+      const response = await this.otpRequestService.updateExpireOtp(phoneNo);
+      return res
+        .status(StatusCodes.OK)
+        .send(responseMessages(StatusCodes.OK, 'OK'));
+    }
     const otpCreated = await this.otpRequestService.create({
       phoneNo: phoneNo,
       otpCode: hash,
     });
     return res
       .status(StatusCodes.OK)
-      .send(responseMessages(StatusCodes.OK, null, otpCreated));
+      .send(responseMessages(StatusCodes.OK, 'OK'));
     // return this.otpRequestService.create(createOtpRequestDto);
   }
 
@@ -54,6 +62,12 @@ export class OtpRequestController {
     //   phoneNo: phoneNo,
     //   otpCode: hash,
     // });
+    console.log(dateNow, user['expireDate']);
+    if (dateNow > user['expireDate']) {
+      return res
+        .status(StatusCodes.OK)
+        .send(responseMessages(StatusCodes.OK, null, false));
+    }
     const condition = await bcrypt.compareSync(otpCode, user['otpCode']);
     return res
       .status(StatusCodes.OK)
